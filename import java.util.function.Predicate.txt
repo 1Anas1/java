@@ -1,0 +1,249 @@
+import java.util.function.Predicate;
+
+public class MinimalNoteCriterion implements Predicate<Etudiant> {
+    private final double minimalNote;
+
+    // Constructeur
+    public MinimalNoteCriterion(double minimalNote) {
+        this.minimalNote = minimalNote;
+    }
+
+    @Override
+    public boolean test(Etudiant etudiant) {
+        Note moyenne = etudiant.moyenneNote();
+        return !moyenne.estAbsent() && moyenne.getValeur() > minimalNote;
+    }
+}
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.function.Predicate;
+
+public class Promotion {
+    private String nomP;
+    private List<Etudiant> etudiants;
+
+    // Constructeur
+    public Promotion(String nomP) {
+        this.nomP = nomP;
+        this.etudiants = new ArrayList<>();
+    }
+
+    // Ajouter un étudiant
+    public void ajoutEtudiant(Etudiant etudiant) {
+        etudiants.add(etudiant);
+    }
+
+    // Compter les étudiants en fonction d'un critère
+    public int countFilteredEtudiants(Predicate<Etudiant> predicate) {
+        int count = 0;
+        for (Etudiant etudiant : etudiants) {
+            if (predicate.test(etudiant)) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    // Nombre d'étudiants validant leur année
+    public int countValidatingStudents() {
+        return countFilteredEtudiants(new MinimalNoteCriterion(10.0));
+    }
+
+    // Nombre d'étudiants absents
+    public int countAbsentStudents() {
+        return countFilteredEtudiants(etudiant -> etudiant.moyenneNote().estAbsent());
+    }
+
+    // Afficher les résultats triés avec statistiques
+    public void impressionResultatsEtudiantsTri() {
+        Collections.sort(etudiants, Comparator.comparing(e -> e.nom));
+        System.out.println(nomP);
+        for (Etudiant etudiant : etudiants) {
+            System.out.println(etudiant);
+        }
+        System.out.println("Nombre d'étudiants ayant validé : " + countValidatingStudents());
+        System.out.println("Nombre d’absents : " + countAbsentStudents());
+    }
+}
+public class Main {
+    public static void main(String[] args) {
+        // Créer une promotion
+        Promotion promotion = new Promotion("M1 BIG DATA");
+
+        // Ajouter des étudiants
+        Etudiant etudiant1 = new Etudiant("Abdelhedi", "Meriem");
+        etudiant1.ajoutResult("Java Objet", new Note());
+        etudiant1.ajoutResult("Modèles linéaires", new Note(18));
+
+        Etudiant etudiant2 = new Etudiant("Zakaria", "Mohamed");
+        etudiant2.ajoutResult("Java Objet", new Note(12));
+        etudiant2.ajoutResult("Modèles linéaires", new Note(10));
+
+        promotion.ajoutEtudiant(etudiant1);
+        promotion.ajoutEtudiant(etudiant2);
+
+        // Afficher les résultats triés avec statistiques
+        promotion.impressionResultatsEtudiantsTri();
+    }
+}
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+
+public class Promotion {
+    private String nomP;
+    private List<Etudiant> etudiants;
+
+    // Constructeur
+    public Promotion(String nomP) {
+        this.nomP = nomP;
+        this.etudiants = new ArrayList<>();
+    }
+
+    // Ajouter un étudiant
+    public void ajoutEtudiant(Etudiant etudiant) {
+        etudiants.add(etudiant);
+    }
+
+    // Afficher les résultats
+    public void impressionResultats() {
+        for (Etudiant etudiant : etudiants) {
+            System.out.println(etudiant);
+        }
+    }
+
+    // Afficher les résultats triés
+    public void impressionResultatsEtudiantsTri() {
+        Collections.sort(etudiants, Comparator.comparing(e -> e.nom));
+        System.out.println(nomP);
+        for (Etudiant etudiant : etudiants) {
+            System.out.println(etudiant);
+        }
+    }
+
+    // Enregistrer les résultats dans un fichier
+    public void enregistrerResultats() throws IOException {
+        try (FileWriter writer = new FileWriter(nomP + ".txt")) {
+            writer.write(nomP + "\n");
+            for (Etudiant etudiant : etudiants) {
+                writer.write(etudiant.toString() + "\n");
+            }
+        }
+    }
+
+    // Enregistrer les absences dans un fichier
+    public void enregistrerAbsences() throws IOException {
+        try (FileWriter writer = new FileWriter(nomP + "DétailsAbsences.txt")) {
+            writer.write("Absences pour la promotion : " + nomP + "\n");
+            for (Etudiant etudiant : etudiants) {
+                StringBuilder absences = new StringBuilder();
+                for (UniteEnseignement ue : etudiant.resultats) {
+                    if (ue.getNote().estAbsent()) {
+                        absences.append(ue.toString()).append("\n");
+                    }
+                }
+                if (absences.length() > 0) {
+                    writer.write(etudiant.prenom + " " + etudiant.nom + " :\n");
+                    writer.write(absences.toString());
+                }
+            }
+        }
+    }
+}
+import java.util.ArrayList;
+import java.util.List;
+
+public class Etudiant {
+    private String prenom;
+    private String nom;
+    private List<UniteEnseignement> resultats;
+
+    // Constructeur
+    public Etudiant(String prenom, String nom) {
+        this.prenom = prenom;
+        this.nom = nom;
+        this.resultats = new ArrayList<>();
+    }
+
+    // Ajouter un résultat
+    public void ajoutResult(String intituleUnite, Note note) {
+        resultats.add(new UniteEnseignement(intituleUnite, note));
+    }
+
+    // Obtenir les notes
+    public List<Note> getNotes() {
+        List<Note> notes = new ArrayList<>();
+        for (UniteEnseignement ue : resultats) {
+            notes.add(ue.getNote());
+        }
+        return notes;
+    }
+
+    // Calculer la moyenne des notes
+    public Note moyenneNote() {
+        double somme = 0.0;
+        int compteur = 0;
+        for (Note note : getNotes()) {
+            if (note.estAbsent()) {
+                return new Note();
+            }
+            somme += note.getValeur();
+            compteur++;
+        }
+        return compteur == 0 ? new Note() : new Note(somme / compteur);
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(prenom).append(" ").append(nom).append("\n");
+        for (UniteEnseignement ue : resultats) {
+            sb.append(ue.toString()).append("\n");
+        }
+        sb.append("Note moyenne : ").append(moyenneNote().toString()).append("\n");
+        return sb.toString();
+    }
+}
+public class Note {
+    public static final double NOTE_MAXIMALE = 20.0;
+    private double valeur;
+    private boolean estAbsent;
+
+    // Constructeurs
+    public Note(double valeur, boolean estAbsent) {
+        if (valeur < 0 || valeur > NOTE_MAXIMALE) {
+            throw new IllegalArgumentException(
+                "La valeur de la note (" + valeur + ") doit être comprise entre 0 et " + NOTE_MAXIMALE
+            );
+        }
+        this.valeur = valeur;
+        this.estAbsent = estAbsent;
+    }
+
+    public Note() {
+        this(0.0, true);
+    }
+
+    public Note(double valeur) {
+        this(valeur, false);
+    }
+
+    // Méthodes
+    public boolean estAbsent() {
+        return estAbsent;
+    }
+
+    public double getValeur() {
+        return valeur;
+    }
+
+    @Override
+    public String toString() {
+        return estAbsent ? "ABS" : valeur + "/20";
+    }
+}
